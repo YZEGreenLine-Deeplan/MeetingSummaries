@@ -458,11 +458,11 @@ export default class MeetingSummariesEdit extends React.Component<IMeetingSummar
                 ...prevState.absents.map((item: any) => item.name).filter((name: string) => name).flat(),
             ]);
 
-            if (onBlur !== 'onBlur' && fieldName === "name") {
+            if (onBlur === 'onBlur' && fieldName === "name") {
                 updatedArray[rowIndex] = { ...updatedArray[rowIndex], ids: e.target.ids ? [...e.target.ids] : [] }
             }
 
-            if (onBlur !== 'onBlur' && fieldName === "forInfo") {
+            if (onBlur === 'onBlur' && fieldName === "forInfo") {
                 updatedArray[rowIndex] = { ...updatedArray[rowIndex], forInfoIds: e.target.forInfoIds ? [...e.target.forInfoIds] : [] }
             }
 
