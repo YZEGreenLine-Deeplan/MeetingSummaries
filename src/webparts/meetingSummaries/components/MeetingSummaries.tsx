@@ -159,7 +159,14 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
   }
 
   folderHandle(folder: IFolder) {
+
+    if (folder.ServerRelativeUrl === '/sites/YZE-MsTasks') {
+      this.setState({ libraryPath: '', libraryName: '' })
+      return
+    }
+
     let libraryPath = folder.ServerRelativeUrl
+
 
     this.setState({ libraryPath: libraryPath, libraryName: folder.Name }, () => {
       this.handleErrorRequire(libraryPath, 'libraryPath')
