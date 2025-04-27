@@ -308,53 +308,54 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
               Description: MeetingSummary,
               Url: `${this.props.context.pageContext.web.absoluteUrl}/SitePages/MeetingSummaries.aspx?FormID=${item.Id}`
             }
-          }).catch((err) => { console.error("Error updating FormLink:", err) });
+          }).then(async () => {
+            if (submitType === 'send') {
+              // Show confirmation dialog
+              await confirmSaveAndSend({
+                currDir,
+                onConfirm: async () => {
+                  for (const task of reformattedTasks) {
+                    try {
+                      const filteredAssignToExternal = users.filter(user =>
+                        task.name.split(', ').includes(user.Title)
+                      );
+                      const filterAssignToInternal = task.name
+                        .split(', ')
+                        .filter(name => filteredAssignToExternal.every(user => user.Title !== name));
+
+                      await this.props.sp.web.lists.getById(this.props.TasksListId).items.add({
+                        Title: task.subject,
+                        MeetingSummaryDate: DateOfMeeting,
+                        AssignedToInternalId: task.ids && task.ids.filter(id => id !== ''),
+                        AssignedToExternal: task.ids && task.ids.filter(id => id !== '').length === 0 ? task.name : filterAssignToInternal.join(', '),
+                        MeetingSummaryName: MeetingSummary,
+                        StartDate: task.startDate,
+                        EndDate: task.endDate,
+                        Description: task.description,
+                        Designation: task.designation,
+                        Importance: task.importance,
+                        UUID: task.uid,
+                        Company: task.company,
+                        ForInfoId: task.forInfoIds,
+                        LinkToMeetingSummary: {
+                          Description: MeetingSummary,
+                          Url: `${this.props.context.pageContext.web.absoluteUrl}/SitePages/MeetingSummaries.aspx?FormID=${itemId}`
+                        }
+                      });
+                    } catch (err) {
+                      console.error("Error saving task", task, err);
+                    }
+                  }
+                  console.log('Tasks processed.');
+                }
+              })
+            }
+          })
+            .catch((err) => { console.error("Error updating FormLink:", err) });
         })
         if (submitType === 'save') { sweetAlertMsgHandler('Submit', currDir) }
       } catch (err) {
         console.error("Error saving Meeting Summary:", err);
-      }
-
-      if (submitType === 'send') {
-        // Show confirmation dialog
-        await confirmSaveAndSend({
-          currDir,
-          onConfirm: async () => {
-            for (const task of reformattedTasks) {
-              try {
-                const filteredAssignToExternal = users.filter(user =>
-                  task.name.split(', ').includes(user.Title)
-                );
-                const filterAssignToInternal = task.name
-                  .split(', ')
-                  .filter(name => filteredAssignToExternal.every(user => user.Title !== name));
-
-                await this.props.sp.web.lists.getById(this.props.TasksListId).items.add({
-                  Title: task.subject,
-                  MeetingSummaryDate: DateOfMeeting,
-                  AssignedToInternalId: task.ids && task.ids.filter(id => id !== ''),
-                  AssignedToExternal: task.ids && task.ids.filter(id => id !== '').length === 0 ? task.name : filterAssignToInternal.join(', '),
-                  MeetingSummaryName: MeetingSummary,
-                  StartDate: task.startDate,
-                  EndDate: task.endDate,
-                  Description: task.description,
-                  Designation: task.designation,
-                  Importance: task.importance,
-                  UUID: task.uid,
-                  Company: task.company,
-                  ForInfoId: task.forInfoIds,
-                  LinkToMeetingSummary: {
-                    Description: MeetingSummary,
-                    Url: `${this.props.context.pageContext.web.absoluteUrl}/SitePages/MeetingSummaries.aspx?FormID=${itemId}`
-                  }
-                });
-              } catch (err) {
-                console.error("Error saving task", task, err);
-              }
-            }
-            console.log('Tasks processed.');
-          }
-        })
       }
     }
 

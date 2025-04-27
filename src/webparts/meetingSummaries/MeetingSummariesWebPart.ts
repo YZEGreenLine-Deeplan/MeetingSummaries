@@ -33,7 +33,7 @@ export default class MeetingSummariesWebPart extends BaseClientSideWebPart<IMeet
   private sp: SPFI
 
   public render(): void {
-
+    console.log("version", solution.version);
     const url = new URL(window.location.href);
     const FormID = url.searchParams.get("FormID");
 
