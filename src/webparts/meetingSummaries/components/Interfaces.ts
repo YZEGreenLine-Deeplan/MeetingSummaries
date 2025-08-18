@@ -1,7 +1,10 @@
 import { DatePicker, DatePickerProps } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker, TimePickerProps } from '@mui/x-date-pickers/TimePicker';
+import { IAttachmentFileInfo, IAttachmentInfo } from "@pnp/sp/attachments/types";
 import { styled } from '@mui/material/styles';
 import { Moment } from 'moment';
+
+export interface IAttachment extends IAttachmentFileInfo, IAttachmentInfo { }
 
 interface CustomPickerProps {
   error?: boolean;
@@ -9,11 +12,14 @@ interface CustomPickerProps {
 export interface SchemaField {
   name: string; // The field name
   label: string; // The display label for the field
-  type: 'string' | 'number' | 'date' | 'action'; // The field type
+  type: 'string' | 'number' | 'date' | 'action' | 'boolean' | 'select' | 'file' | 'richtext'; // The field type
   width?: number;
   component?: JSX.Element;
   editable?: boolean;
-  action?: Function
+  action?: Function;
+  options?: { value: string; label: string }[]; // For select fields
+  required?: boolean; // Whether the field is required
+  visible?: boolean; // Whether the field is visible
 }
 
 export interface Schema {
@@ -40,7 +46,13 @@ export interface Task extends BaseEntity {
   ids?: string[];
   forInfo?: string;
   forInfoIds?: string[];
+  locked?: boolean;
+  grantUsersPermissions?: string[];
+  grantUsersPermissionsIds?: string[];
+  attachments?: string[];
 }
+
+
 
 export interface Employee extends BaseEntity {
   name: string;
@@ -54,6 +66,21 @@ export interface MeetingContent extends BaseEntity {
   dueDate: string;
   status: string;
   ids?: any[]
+}
+
+export interface MeetingSummary extends BaseEntity {
+    id: number;
+    MeetingSummary: string;
+    DateOfMeeting: string;
+    Reference: string;
+    attendees: Employee[];
+    absents: Employee[];
+    tasks: Task[];
+    meetingContent: MeetingContent[];
+
+    attachments: IAttachment[];
+    isClassified: boolean;
+    classifiedUsers: string[];
 }
 
 export type SchemaType = 'Task' | 'Employee' | 'MeetingContent';

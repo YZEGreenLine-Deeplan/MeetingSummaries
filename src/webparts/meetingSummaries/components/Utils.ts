@@ -5,6 +5,9 @@ import Swal from 'sweetalert2'
 import { blue, red } from '@mui/material/colors';
 import moment, { Moment } from 'moment';
 import { SPFI } from '@pnp/sp';
+import PAService from '../services/powerAutomate.srv';
+import { WebPartContext } from '@microsoft/sp-webpart-base';
+import { IAttachment } from './Interfaces';
 
 const customClass = {
     title: styles.swal2Title,
@@ -26,7 +29,11 @@ export const defaultFactory = <T>(type: SchemaType): Partial<T> => {
             startDate: '',
             endDate: '',
             importance: '',
-            description: ''
+            description: '',
+            attachments: [],
+            locked: true,
+            grantUsersPermissions: [],
+            grantUsersPermissionsIds: []
         },
         Employee: {
             name: '',
@@ -38,7 +45,8 @@ export const defaultFactory = <T>(type: SchemaType): Partial<T> => {
             name: '',
             dueDate: '',
             status: ''
-        }
+        },
+
     };
 
     return templates[type] as Partial<T>;
@@ -200,8 +208,6 @@ export const saveEntities = async (
     ...arrays: Entity[][]
 ): Promise<void> => {
 
-    console.log("key:", key)
-
     const combinedNames = new Set<string>(
         arrays
             .reduce((acc, array) => acc.concat(array), []) // Flatten all arrays into a single array
@@ -332,3 +338,69 @@ export const sweetAlertMsgHandler = (status: string, currDir: boolean): void => 
         });
     }
 }
+
+
+
+
+
+export const handleAttachmentChange = (value: IAttachment[], setState: React.Dispatch<React.SetStateAction<any>>) => {
+    setState((prev: any) => ({
+        ...prev,
+        Attachments: value
+    }));
+}
+
+export const addAttachments = async (itemId: number, listId: string, attachments: IAttachment[], sp: SPFI): Promise<void> => {
+    const item = sp.web.lists.getById(listId).items.getById(itemId);
+    for (const attachment of attachments) {
+        try {
+            await item.attachmentFiles.add(attachment.FileName, attachment.content as Blob | ArrayBuffer | string);
+        } catch (error) {
+            throw new Error(`Failed to add item attachment ${attachment.FileName} to item ${itemId} in list ${listId}: ${String(error)}`);
+        }
+    }
+}
+
+export const getAttachments = async (itemId: number, listId: string, sp: SPFI): Promise<IAttachment[]> => {
+    try {
+        const item = sp.web.lists.getById(listId).items.getById(itemId) as any;
+        return await item.attachmentFiles();
+    } catch (error) {
+        throw new Error(`Failed to retrieve attachments for item ${itemId} in list ${listId}: ${String(error)}`);
+    }
+}
+
+export const deleteAttachments = async (itemId: number, attachments: IAttachment[], listId: string, sp: SPFI): Promise<void> => {
+    const item = sp.web.lists.getById(listId).items.getById(itemId) as any;
+    for (const attachment of attachments) {
+        let fileName = attachment.FileName
+        try {
+            await item.attachmentFiles.getByName(fileName).recycle()
+        } catch (error) {
+            throw new Error(`Failed to recycle item attachment ${fileName} to item ${itemId} in list ${listId}: ${String(error)}`);
+        }
+    }
+}
+
+export const getAuthUsers = async (context: WebPartContext): Promise<number[]> => {
+    const pa = new PAService(context, 'https://defaulta7bb05389a624bbea7a5af184af71f.39.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/169e815611ad4351961553ed3975b811/triggers/manual/paths/invoke/?api-version=1')
+    type User = {
+        Email: string;
+        Id: number;
+        LoginName: string;
+        Title: string;
+        __metadata: {}
+    }
+    try {
+        const res = await pa.post({
+            groupsId: 3
+        })
+        if (res.status === 200) {
+            return res.data.d.results.map((user: User) => user.Id)
+        }
+    } catch (error) {
+        console.error('Error in power automate flow', error)
+    }
+    return []
+}
+

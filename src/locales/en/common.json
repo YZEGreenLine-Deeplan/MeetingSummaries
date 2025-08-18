@@ -3,6 +3,7 @@
     "Date": "Date",
     "Meeting Summary": "Meeting Summary",
     "Date of meeting": "Date of meeting",
+    "Reference": "Reference",
     "Summarizing": "Summarizing",
     "Attendees": "Attendees",
     "ID": "ID",
@@ -42,5 +43,10 @@
     "textSaveAndSend": "This action is irreversible. Once saved and sent, you cannot undo the changes.",
     "confirmButtonTextSaveAndSend": "Yes, Save & Send",
     "required": "Required field",
-    "forInfo": "For Info"
+    "forInfo": "For Info",
+    "SaveAsDraft": "Save as draft",
+    "Attachments": "Attachments",
+    "ChooseFiles": "Choose Files",
+    "UploadedFiles": "Uploaded Files:",
+    "confidentialTask": "Confidential Task"
 }

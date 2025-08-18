@@ -12,6 +12,7 @@ import "@pnp/sp/content-types";
 import "@pnp/sp/site-users/web";
 // import "@pnp/sp/items/get-all";
 import "@pnp/sp/profiles"
+import "@pnp/sp/attachments";
 
 // import { graphfi, SPFx as graphSPFx } from "@pnp/graph";
 // import { GraphFI } from "@pnp/graph/fi";

@@ -11,16 +11,20 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { FolderPicker, IFolder } from "@pnp/spfx-controls-react/lib/FolderPicker";
 import moment, { Moment } from 'moment';
-import { Schema, StyledDatePicker, Task, Employee, MeetingContent } from './Interfaces'
+import { Schema, StyledDatePicker, Task, Employee, MeetingContent, IAttachment } from './Interfaces'
 import { Icon } from '@fluentui/react/lib/Icon';
 import ClearIcon from '@mui/icons-material/Clear';
 import TableRepeatingSection from './TableReaptingSection/TableRepeatingSection.cmp';
 import { IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { v4 as uuidv4 } from 'uuid';
-import { addRow, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, saveEntities, confirmSaveAndSend } from './Utils';
+import { addRow, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, saveEntities, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments } from './Utils';
+import { getAuthUsers } from './Utils';
 import { CacheProviderWrapper } from './CacheProviderWrapper';
 import PeoplePickerMUI from './PeoplePickerMUI/PeoplePickerMUI.cmp';
+import Attachment from './Attachment/Attachment.cmp';
+import { FormatService } from '../services/format.srv';
+// import DraftManager from './DraftManager/DraftManager.cmp';
 
 export interface IMeetingSummariesProps {
   userDisplayName: string;
@@ -39,6 +43,8 @@ export interface IMeetingSummariesStates {
   users: any[];
   MeetingSummary: string;
   DateOfMeeting: Moment;
+  Reference: string;
+  selectionModel: any[];
   libraryPath: string;
   libraryName: string;
   isValid: boolean;
@@ -52,9 +58,14 @@ export interface IMeetingSummariesStates {
   meetingContent: MeetingContent[];
   externalUsers: any[];
   externalUsersToSave: any[];
-  selectedUsers: any[];
-  selectedUsersFreeSolo: any[];
+  selectedUsers: string[];
+  selectedUsersFreeSolo: string[];
   freeSoloUser: string;
+  MeetingSummaryVersion: string;
+  authUsers?: number[];
+
+
+
 }
 
 const theme = createTheme({
@@ -81,6 +92,8 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
       users: [],
       MeetingSummary: '',
       DateOfMeeting: moment(),
+      Reference: '',
+      selectionModel: [],
       libraryPath: '',
       libraryName: '',
       isValid: true,
@@ -89,13 +102,35 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
       companies: [],
       attendees: [{ id: 1, name: '', company: '', designation: '', uid: uuidv4() }],
       absents: [{ id: 1, name: '', company: '', designation: '', uid: uuidv4() }],
-      tasks: [{ id: 1, company: '', name: '', designation: '', department: '', subject: '', startDate: '', endDate: '', importance: '', description: '', ids: [], uid: uuidv4() }],
+      tasks: [{ 
+        id: 1, 
+        company: '', 
+        name: '', 
+        designation: '', 
+        department: '', 
+        subject: '', 
+        startDate: '', 
+        endDate: '', 
+        importance: '', 
+        description: '', 
+        ids: [], 
+        uid: uuidv4(),
+        locked: true,
+        grantUsersPermissions: [],
+        grantUsersPermissionsIds: [],
+        attachments: []
+      }],
       meetingContent: [{ id: 1, description: '', name: '', dueDate: '', status: '', uid: uuidv4(), idView: '1' }],
       externalUsers: [],
       externalUsersToSave: [],
       selectedUsers: [],
       selectedUsersFreeSolo: [],
       freeSoloUser: '',
+      MeetingSummaryVersion: '',
+      authUsers: [],
+
+
+
     }
 
     this.onChangeGeneric = this.onChangeGeneric.bind(this);
@@ -115,7 +150,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
   onInit = async () => {
     try {
       // Run all promises in parallel
-      const [user, companiesList, externalUsers, users] = await Promise.all([
+      const [user, companiesList, externalUsers, users, authUsers] = await Promise.all([
         this.props.sp.web.currentUser()
           .catch(err => { console.error("Error fetching Current User:", err); throw err }),
         this.props.sp.web.lists.getById(this.props.CompaniesList).items.select('Title')()
@@ -123,7 +158,8 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
         this.props.sp.web.lists.getById(this.props.ExternalUsersOptions).items()
           .catch(err => { console.error("Error fetching External Users:", err); throw err }),
         this.props.sp.web.siteUsers.select('Id, Title, Email').filter("Email ne ''")()
-          .catch(err => { console.error("Error fetching Users:", err); throw err })
+          .catch(err => { console.error("Error fetching Users:", err); throw err }),
+        getAuthUsers(this.props.context).catch(() => [])
       ]);
 
       // Extract only the 'Title' from companies
@@ -134,7 +170,8 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
         currUser: user,
         companies: companies,
         externalUsers: externalUsers,
-        users: [...users, ...externalUsers]
+        users: [...users, ...externalUsers],
+        authUsers
       });
     } catch (error) {
       console.error("Error initializing data:", error);
@@ -192,7 +229,6 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
         isValid = false;
       }
     });
-    console.log("errors:", errors)
 
     this.setState({ errors });
     return isValid;
@@ -248,7 +284,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
   }
 
   submitForm = async (submitType: string) => {
-    const { users, currDir, companies, DateOfMeeting, MeetingSummary, libraryPath, libraryName, attendees, absents, meetingContent, tasks, selectedUsers, selectedUsersFreeSolo, currUser } = this.state
+    const { users, currDir, companies, DateOfMeeting, MeetingSummary, Reference, libraryPath, libraryName, attendees, absents, meetingContent, tasks, selectedUsers, selectedUsersFreeSolo, currUser } = this.state
 
     let itemId: string = ''
     this.setState({ LoadingForm: 'Saving' })
@@ -272,7 +308,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
     const reformattedTasks =
       reformatList<Task>(
         reformatListWithDates(tasks, ['startDate', 'endDate']),
-        ['company', 'name', 'designation', 'department', 'subject', 'startDate', 'endDate', 'importance', 'description', 'ids']
+        ['company', 'name', 'designation', 'department', 'subject', 'startDate', 'endDate', 'importance', 'description', 'ids', 'locked', 'grantUsersPermissions', 'grantUsersPermissionsIds']
       )
 
     if (this.validateForm()) {
@@ -285,24 +321,41 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
       ]);
 
       try {
-        await this.props.sp.web.lists.getById(this.props.MeetingSummariesListId).items.add({
-          DateOfMeeting: moment(DateOfMeeting),
-          MeetingSummary: MeetingSummary,
-          attendees: JSON.stringify(reformattedAttendees),
-          absents: JSON.stringify(reformattedAbsents),
-          meetingContent: JSON.stringify(reformattedMeetingContent),
-          tasks: JSON.stringify(reformattedTasks),
-          libraryPath: libraryPath,
-          libraryName: libraryName,
-          language: this.state.currDir ? 'he' : 'en',
-          dir: this.state.currDir,
-          selectedUsers: JSON.stringify(selectedUsers),
-          selectedUsersFreeSolo: JSON.stringify(selectedUsersFreeSolo),
-          submit: submitType,
-          Summarizing: currUser?.Title,
-          Copy: [...this.state.selectedUsers, ...this.state.selectedUsersFreeSolo].flat().join(', '),
-        }).then(async (item) => {
+            const itemData: any = {
+                DateOfMeeting: moment(DateOfMeeting),
+                MeetingSummary: MeetingSummary,
+                Reference: Reference,
+                attendees: JSON.stringify(reformattedAttendees),
+                absents: JSON.stringify(reformattedAbsents),
+                meetingContent: JSON.stringify(reformattedMeetingContent),
+                tasks: JSON.stringify(reformattedTasks),
+                libraryPath: libraryPath,
+                libraryName: libraryName,
+                language: this.state.currDir ? 'he' : 'en',
+                dir: this.state.currDir,
+                selectedUsers: JSON.stringify(selectedUsers),
+                selectedUsersFreeSolo: JSON.stringify(selectedUsersFreeSolo),
+                submit: submitType,
+                Summarizing: currUser?.Title,
+                Copy: [...this.state.selectedUsers, ...this.state.selectedUsersFreeSolo].flat().join(', '),
+                // isSaveAndSend: submitType === 'send' ? 'true' : '',
+            };
+            
+            // Set MeetingSummaryVersion based on submit type
+            itemData.MeetingSummaryVersion = submitType === 'send' ? 'Final' : 'Draft';
+            
+            // Add draft fields
+            if (submitType === 'SaveAsDraft') {
+                itemData.submit = 'SaveAsDraft';
+                itemData.MeetingSummaryVersion = 'Draft';
+            }
+        
+        await this.props.sp.web.lists.getById(this.props.MeetingSummariesListId).items.add(itemData).then(async (item) => {
           itemId = item.Id
+          
+          // Update attachments after item creation
+          await this.updateAttachmentsAfterCreation(item.Id);
+          
           await this.props.sp.web.lists.getById(this.props.MeetingSummariesListId).items.getById(item.Id).update({
             FormLink: {
               Description: MeetingSummary,
@@ -337,6 +390,9 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                         UUID: task.uid,
                         Company: task.company,
                         ForInfoId: task.forInfoIds,
+                        Locked: task.locked || false,
+                        GrantUsersPermissions: task.grantUsersPermissions || [],
+                        GrantUsersPermissionsIds: task.grantUsersPermissionsIds || [],
                         LinkToMeetingSummary: {
                           Description: MeetingSummary,
                           Url: `${this.props.context.pageContext.web.absoluteUrl}/SitePages/MeetingSummaries.aspx?FormID=${itemId}`
@@ -349,6 +405,9 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                   console.log('Tasks processed.');
                 }
               })
+            } else if (submitType === 'SaveAsDraft') {
+              // For drafts, show success message without creating tasks
+              sweetAlertMsgHandler('Submit', currDir);
             }
           })
             .catch((err) => { console.error("Error updating FormLink:", err) });
@@ -362,7 +421,9 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
     this.setState({ LoadingForm: 'ok' })
   }
 
-  // * new functions /
+  
+
+
   onChangeGeneric(e: any, dataArrayName: string, fieldName: string, rowIndex: number, onBlur?: string): void {
     const value = e.target.value;
 
@@ -418,6 +479,10 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
 
       if (onBlur === 'onBlur' && fieldName === "forInfo") {
         updatedArray[rowIndex] = { ...updatedArray[rowIndex], forInfoIds: e.target.forInfoIds ? [...e.target.forInfoIds] : [] }
+      }
+
+      if (onBlur === 'onBlur' && fieldName === "grantUsersPermissions") {
+        updatedArray[rowIndex] = { ...updatedArray[rowIndex], grantUsersPermissionsIds: e.target.grantUsersPermissionsIds ? [...e.target.grantUsersPermissionsIds] : [] }
       }
 
       return { [dataArrayName]: updatedArray, selectedUsers: Array.from(combinedSelectedUsers) };
@@ -476,6 +541,9 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
       description: description || '',
       uid: uuidv4(),
       attachedId: uid,
+      locked: true,
+      grantUsersPermissions: [],
+      grantUsersPermissionsIds: [],
     };
 
     this.setState((prevState) => {
@@ -504,6 +572,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
     const { currUser, currDir, LoadingForm, DateOfMeeting, users, libraryName, errors, attendees, absents, tasks, meetingContent } = this.state
 
     const t = currDir ? require('../../../locales/he/common.json') : require('../../../locales/en/common.json') // Translator between en/he
+    const unlockAccess = this.state.currUser && this.state.authUsers ? this.state.authUsers.includes(this.state.currUser.Id) : false;
 
     const employeeSchema: Schema = {
       fields: [
@@ -517,6 +586,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
     const taskSchema: Schema = {
       fields: [
         // { name: 'id', label: t.ID, type: 'number', width: 80 },
+        unlockAccess ? { name: 'lock', label: t.confidentialTask, type: 'action', editable: true } as any : null,
         { name: 'company', label: t.Company, type: 'string', editable: true },
         { name: 'name', label: t.Name, type: 'string', editable: true },
         { name: 'designation', label: t.Designation, type: 'string', editable: true },
@@ -527,8 +597,9 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
         { name: 'importance', label: t.Importance, type: 'string', editable: true },
         { name: 'description', label: t.Description, type: 'string', editable: true },
         { name: 'forInfo', label: t.forInfo, type: 'string', editable: true },
+        unlockAccess ? { name: 'grantUsersPermissions', label: 'Authorized', type: 'action', editable: true } as any : null,
         { name: 'action', label: t.Delete, type: 'action', width: 50, editable: true }
-      ],
+      ].filter(Boolean) as any,
     }
     const meetingContentSchema: Schema = {
       fields: [
@@ -554,11 +625,11 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
               <div className={styles.ContainerForm}>
 
                 {LoadingForm === 'Loading' ? <Loader /> : <section>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'end', paddingBottom: '1em', direction: 'ltr' }}>
-                    <Typography>עברית</Typography>
-                    <Switch onClick={() => this.setState({ currDir: !currDir })} defaultChecked inputProps={{ 'aria-label': 'ant design' }} />
-                    <Typography>English</Typography>
-                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'end', paddingBottom: '1em', direction: 'ltr' }}>
+                  <Typography>עברית</Typography>
+                  <Switch onClick={() => this.setState({ currDir: !currDir })} defaultChecked inputProps={{ 'aria-label': 'ant design' }} />
+                  <Typography>English</Typography>
+                </div>
 
                   <section className={styles.Section}>
                     <div className={styles.fieldStyle}>
@@ -594,6 +665,10 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                     />
 
                   </section>
+
+                  <div className={styles.fieldStyle} style={{ alignItems: 'flex-start' }}>
+                    <TextField type='text' multiline label={t['Reference']} style={{ width: '35%' }} maxRows={3} name='Reference' value={this.state.Reference} onChange={this.onChange} variant='standard' />
+                  </div>
 
                   <ThemeProvider theme={theme}>
                     <TableRepeatingSection
@@ -674,6 +749,8 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
 
                   </ThemeProvider>
 
+                  <Attachment currDir={currDir} sp={this.props.sp} formType='new' value={this.state.attachments} onChange={(value) => this.setState({ attachments: value })}></Attachment>
+
                   <Divider style={{ paddingTop: '1em' }} />
 
                   <div className={styles.folderPickerContainer} style={{ width: '100%', paddingTop: '2em' }}>
@@ -702,16 +779,49 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                   {LoadingForm === 'Saving' ? <LinearProgress /> : null}
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '2em', gap: '20px' }}>
-                    <Button variant="contained" color='success' sx={{ backgroundColor: '#8AC693', minWidth: '10em', textTransform: 'capitalize' }} onClick={() => this.submitForm('send')}>{t.SaveAndSend}</Button>
-                    <Button variant="contained" color='primary' sx={{ minWidth: '10em', textTransform: 'capitalize' }} onClick={() => this.submitForm('save')}>{t.Save}</Button>
-                    <Button variant="contained" color='error' sx={{ backgroundColor: '#CA3935', minWidth: '10em', textTransform: 'capitalize' }} onClick={() => sweetAlertMsgHandler('Cancel', currDir)}>{t.Cancel}</Button>
-                  </div>
+                        <Button variant="contained" color='success' sx={{ backgroundColor: '#8AC693', minWidth: '10em', textTransform: 'capitalize' }} onClick={() => this.submitForm('send')}>{t.SaveAndSend}</Button>
+                        <Button variant="contained" color='primary' sx={{ minWidth: '10em', textTransform: 'capitalize' }} onClick={() => this.submitForm('save')}>{t.Save}</Button>
+                        <Button variant="contained" sx={{ whiteSpace: 'nowrap', backgroundColor: '#EBAD67', minWidth: '10em', textTransform: 'capitalize', '&:hover': { backgroundColor: '#D79954' } }} onClick={() => this.submitForm('SaveAsDraft')}>{t.SaveAsDraft}</Button>
+                        {/* Draft Manager functionality commented out
+                        <Button variant="outlined" color='info' sx={{ minWidth: '10em', textTransform: 'capitalize' }} onClick={this.openDraftManager}>ניהול Drafts</Button>
+                        */}
+                        <Button variant="contained" color='error' sx={{ backgroundColor: '#CA3935', minWidth: '10em', textTransform: 'capitalize' }} onClick={() => sweetAlertMsgHandler('Cancel', currDir)}>{t.Cancel}</Button>
+                    </div>
                 </section>}
               </div>
             </Paper>
+            
+
           </form>
         </CacheProviderWrapper>
       </LocalizationProvider>
     );
+  }
+
+  updateAttachments = async () => {
+    try {
+      let { attachments } = this.state;
+      const formattedAttachments: IAttachment[] = FormatService.formatAttachments(attachments);
+      // For new items, we don't need to delete existing attachments
+      // Just add the new ones when the item is created
+      if (formattedAttachments.length > 0) {
+        // This will be called after the item is created and we have the itemId
+        console.log('Attachments to be added:', formattedAttachments);
+      }
+    } catch (error) {
+      console.error('updateAttachments error: ', error);
+    }
+  }
+
+  updateAttachmentsAfterCreation = async (itemId: number) => {
+    try {
+      let { attachments } = this.state;
+      const formattedAttachments: IAttachment[] = FormatService.formatAttachments(attachments);
+      if (formattedAttachments.length > 0) {
+        await addAttachments(itemId, this.props.MeetingSummariesListId, formattedAttachments, this.props.sp);
+      }
+    } catch (error) {
+      console.error('updateAttachmentsAfterCreation error: ', error);
+    }
   }
 }
