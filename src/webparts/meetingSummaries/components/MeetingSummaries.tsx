@@ -18,8 +18,7 @@ import TableRepeatingSection from './TableReaptingSection/TableRepeatingSection.
 import { IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { v4 as uuidv4 } from 'uuid';
-import { addRow, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, saveEntities, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments } from './Utils';
-import { getAuthUsers } from './Utils';
+import { addRow, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, saveEntities, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments, getAuthUsers, stripHtmlTags } from './Utils';
 import { CacheProviderWrapper } from './CacheProviderWrapper';
 import PeoplePickerMUI from './PeoplePickerMUI/PeoplePickerMUI.cmp';
 import Attachment from './Attachment/Attachment.cmp';
@@ -384,7 +383,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                         MeetingSummaryName: MeetingSummary,
                         StartDate: task.startDate,
                         EndDate: task.endDate,
-                        Description: task.description,
+                        Description: stripHtmlTags(task.description),
                         Designation: task.designation,
                         Importance: task.importance,
                         UUID: task.uid,

@@ -404,3 +404,33 @@ export const getAuthUsers = async (context: WebPartContext): Promise<number[]> =
     return []
 }
 
+export const stripHtmlTags = (html: string): string => {
+    if (!html) return '';
+    
+    // First, replace common HTML entities
+    let text = html
+        .replace(/&nbsp;/g, ' ') // Convert &nbsp; to spaces
+        .replace(/&amp;/g, '&') // Convert &amp; to &
+        .replace(/&lt;/g, '<') // Convert &lt; to <
+        .replace(/&gt;/g, '>') // Convert &gt; to >
+        .replace(/&quot;/g, '"') // Convert &quot; to "
+        .replace(/&#39;/g, "'") // Convert &#39; to '
+        .replace(/&apos;/g, "'"); // Convert &apos; to '
+    
+    // Replace block-level elements with newlines to preserve line breaks
+    text = text
+        .replace(/<\/?(p|div|h[1-6]|ol|ul|li|br)[^>]*>/gi, '\n') // Replace block elements with newlines
+        .replace(/<\/?(strong|b|em|i|u|s|span)[^>]*>/gi, ''); // Remove inline formatting tags
+    
+    // Remove any remaining HTML tags
+    text = text.replace(/<[^>]*>/g, '');
+    
+    // Clean up whitespace and normalize line breaks
+    text = text
+        .replace(/\n\s*\n/g, '\n') // Replace multiple newlines with single newline
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .trim(); // Remove leading/trailing whitespace
+    
+    return text;
+}
+
