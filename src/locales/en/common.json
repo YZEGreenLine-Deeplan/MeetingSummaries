@@ -48,5 +48,7 @@
     "Attachments": "Attachments",
     "ChooseFiles": "Choose Files",
     "UploadedFiles": "Uploaded Files:",
-    "confidentialTask": "Confidential Task"
+    "confidentialTask": "Confidential Task",
+    "validationErrorTitle": "Missing Required Fields",
+    "validationErrorText": "Please fill in all required fields before saving the form."
 }

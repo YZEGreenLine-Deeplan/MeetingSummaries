@@ -432,5 +432,26 @@ export const stripHtmlTags = (html: string): string => {
         .trim(); // Remove leading/trailing whitespace
     
     return text;
-}
+};
+
+export const showValidationError = (currDir: boolean): void => {
+    const t = currDir ? require('../../../locales/he/common.json') : require('../../../locales/en/common.json');
+    
+    // Use appropriate direction based on language
+    const directionClass = currDir ? customClass : {
+        ...customClass,
+        htmlContainer: `${styles.swal2Content} swal2-ltr-content`
+    };
+    
+    Swal.fire({
+        title: t.validationErrorTitle,
+        text: t.validationErrorText,
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: blue.A400,
+        customClass: directionClass,
+        backdrop: false,
+        returnFocus: false
+    });
+};
 

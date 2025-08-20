@@ -18,7 +18,7 @@ import TableRepeatingSection from './TableReaptingSection/TableRepeatingSection.
 import { IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { v4 as uuidv4 } from 'uuid';
-import { addRow, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, saveEntities, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments, getAuthUsers, stripHtmlTags } from './Utils';
+import { addRow, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, saveEntities, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments, getAuthUsers, stripHtmlTags, showValidationError } from './Utils';
 import { CacheProviderWrapper } from './CacheProviderWrapper';
 import PeoplePickerMUI from './PeoplePickerMUI/PeoplePickerMUI.cmp';
 import Attachment from './Attachment/Attachment.cmp';
@@ -415,6 +415,9 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
       } catch (err) {
         console.error("Error saving Meeting Summary:", err);
       }
+    } else {
+      // Show validation error popup when required fields are missing
+      showValidationError(this.state.currDir);
     }
 
     this.setState({ LoadingForm: 'ok' })

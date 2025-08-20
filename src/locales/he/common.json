@@ -48,5 +48,7 @@
     "Attachments": "מסמכים",
     "ChooseFiles": "בחר קבצים",
     "UploadedFiles": "קבצים שהועלו:",
-    "confidentialTask": "משימה חסויה"
+    "confidentialTask": "משימה חסויה",
+    "validationErrorTitle": "חסרים שדות חובה",
+    "validationErrorText": "יש למלא את כל השדות החובה לפני שמירת הטופס."
 }
