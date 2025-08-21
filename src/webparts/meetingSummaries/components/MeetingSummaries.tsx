@@ -18,7 +18,7 @@ import TableRepeatingSection from './TableReaptingSection/TableRepeatingSection.
 import { IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { v4 as uuidv4 } from 'uuid';
-import { addRow, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, saveEntities, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments, getAuthUsers, stripHtmlTags, showValidationError } from './Utils';
+import { addRow, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, saveEntities, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments, getAuthUsers, stripHtmlTags, showValidationError, initReformatList, initReformatListWithDates } from './Utils';
 import { CacheProviderWrapper } from './CacheProviderWrapper';
 import PeoplePickerMUI from './PeoplePickerMUI/PeoplePickerMUI.cmp';
 import Attachment from './Attachment/Attachment.cmp';
@@ -60,8 +60,10 @@ export interface IMeetingSummariesStates {
   selectedUsers: string[];
   selectedUsersFreeSolo: string[];
   freeSoloUser: string;
+  Attachments: IAttachment[];
+  FromExsitingMeetingSummaryId: string;
+  authUsers: number[];
   MeetingSummaryVersion: string;
-  authUsers?: number[];
 
 
 
@@ -125,8 +127,10 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
       selectedUsers: [],
       selectedUsersFreeSolo: [],
       freeSoloUser: '',
-      MeetingSummaryVersion: '',
+      Attachments: [],
+      FromExsitingMeetingSummaryId: '',
       authUsers: [],
+      MeetingSummaryVersion: '',
 
 
 
@@ -146,8 +150,27 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
     console.log(this.state);
   }
 
+  componentWillUnmount(): void {
+    const url = new URL(window.location.href);
+    const FromExsitingMeetingSummaryId = url.searchParams.get("FromExsitingMeetingSummaryId");
+    localStorage.removeItem(String(FromExsitingMeetingSummaryId))
+  }
+
   onInit = async () => {
+    const url = new URL(window.location.href);
+    const FromExsitingMeetingSummaryId = url.searchParams.get("FromExsitingMeetingSummaryId");
+
     try {
+      const raw = localStorage.getItem(String(FromExsitingMeetingSummaryId));
+      let item = null
+      if (raw) {
+        try {
+          item = JSON.parse(raw);
+        } catch (err) {
+          console.error('invalid JSON in localStorage:', raw);
+        }
+      }
+
       // Run all promises in parallel
       const [user, companiesList, externalUsers, users, authUsers] = await Promise.all([
         this.props.sp.web.currentUser()
@@ -172,6 +195,38 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
         users: [...users, ...externalUsers],
         authUsers
       });
+
+      if (item) {
+        let attachments: IAttachment[] = []
+
+        if (item.Attachments) {
+          try {
+            attachments = await getAttachments(item.Id, this.props.MeetingSummariesListId, this.props.sp);
+          } catch (error) {
+            console.error("onInit (fetching attachments) error:", error)
+          }
+        }
+
+
+
+        this.setState({
+          Reference: item.Reference || '',
+          MeetingSummary: item.MeetingSummary || '',
+          DateOfMeeting: moment(item.DateOfMeeting),
+          libraryPath: item.libraryPath || '',
+          libraryName: item.libraryName || '',
+          attendees: JSON.parse(item.attendees).length !== 0 ? initReformatList(JSON.parse(item.attendees)) : [{ id: 1, name: '', company: '', designation: '', uid: uuidv4() }],
+          absents: JSON.parse(item.absents).length !== 0 ? initReformatList(JSON.parse(item.absents)) : [{ id: 1, name: '', company: '', designation: '', uid: uuidv4() }],
+          tasks: JSON.parse(item.tasks).length !== 0 ? initReformatListWithDates(initReformatList(JSON.parse(item.tasks)), ['startDate', 'endDate']) : [{ id: 1, company: '', name: '', designation: '', department: '', subject: '', startDate: '', endDate: '', importance: '', description: '', locked: true, uid: uuidv4() }],
+          meetingContent: JSON.parse(item.meetingContent).length !== 0 ? initReformatListWithDates(initReformatList(JSON.parse(item.meetingContent)), ['dueDate']) : [{ id: 1, description: '', name: '', dueDate: '', status: '', uid: uuidv4() }],
+          currDir: item.dir,
+          selectedUsers: JSON.parse(item.selectedUsers),
+          selectedUsersFreeSolo: JSON.parse(item.selectedUsersFreeSolo),
+          Attachments: attachments.length ? attachments : [],
+          FromExsitingMeetingSummaryId: FromExsitingMeetingSummaryId ? FromExsitingMeetingSummaryId : ''
+        } as any)
+      }
+
     } catch (error) {
       console.error("Error initializing data:", error);
     }
@@ -353,7 +408,12 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
           itemId = item.Id
           
           // Update attachments after item creation
-          await this.updateAttachmentsAfterCreation(item.Id);
+          try {
+            if (this.state.FromExsitingMeetingSummaryId === '') await this.updateAttachmentsAfterCreation(item.Id);
+            else await this.updateAttachments(String(item.Id))
+          } catch (error) {
+            console.error('Error adding attachments', error)
+          }
           
           await this.props.sp.web.lists.getById(this.props.MeetingSummariesListId).items.getById(item.Id).update({
             FormLink: {
@@ -571,7 +631,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
 
   public render(): React.ReactElement<IMeetingSummariesProps> {
 
-    const { currUser, currDir, LoadingForm, DateOfMeeting, users, libraryName, errors, attendees, absents, tasks, meetingContent } = this.state
+    const { currUser, currDir, LoadingForm, DateOfMeeting, users, libraryName, errors, attendees, absents, tasks, meetingContent, MeetingSummary } = this.state
 
     const t = currDir ? require('../../../locales/he/common.json') : require('../../../locales/en/common.json') // Translator between en/he
     const unlockAccess = this.state.currUser && this.state.authUsers ? this.state.authUsers.includes(this.state.currUser.Id) : false;
@@ -641,8 +701,8 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                     </div>
 
                     <div className={styles.fieldStyle}>
-                      <TextField type='text' onBlur={this.onChange} name='MeetingSummary'
-                        fullWidth label={t["Meeting Summary"]} variant="outlined" required={true} error={!!errors['MeetingSummary']} />
+                      <TextField type='text' onChange={this.onChange} name='MeetingSummary'
+                        fullWidth label={t["Meeting Summary"]} value={MeetingSummary} variant="outlined" required={true} error={!!errors['MeetingSummary']} />
                       {this.requireErrorJSX('MeetingSummary')}
                     </div>
 
@@ -778,6 +838,10 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                     {this.requireErrorJSX('libraryPath')}
                   </div>
 
+                  <Attachment currDir={currDir} sp={this.props.sp} formType={this.state.FromExsitingMeetingSummaryId === '' ? 'new' : 'edit'} value={this.state.Attachments} onChange={(value) => this.setState({ Attachments: value })}></Attachment>
+
+                  <Divider style={{ paddingTop: '1em' }} />
+
                   {LoadingForm === 'Saving' ? <LinearProgress /> : null}
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '2em', gap: '20px' }}>
@@ -800,30 +864,28 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
     );
   }
 
-  updateAttachments = async () => {
-    try {
-      let { attachments } = this.state;
-      const formattedAttachments: IAttachment[] = FormatService.formatAttachments(attachments);
-      // For new items, we don't need to delete existing attachments
-      // Just add the new ones when the item is created
-      if (formattedAttachments.length > 0) {
-        // This will be called after the item is created and we have the itemId
-        console.log('Attachments to be added:', formattedAttachments);
-      }
-    } catch (error) {
-      console.error('updateAttachments error: ', error);
-    }
-  }
-
   updateAttachmentsAfterCreation = async (itemId: number) => {
     try {
-      let { attachments } = this.state;
-      const formattedAttachments: IAttachment[] = FormatService.formatAttachments(attachments);
+      let { Attachments } = this.state;
+      const formattedAttachments: IAttachment[] = FormatService.formatAttachments(Attachments);
       if (formattedAttachments.length > 0) {
         await addAttachments(itemId, this.props.MeetingSummariesListId, formattedAttachments, this.props.sp);
       }
     } catch (error) {
       console.error('updateAttachmentsAfterCreation error: ', error);
+    }
+  }
+
+  updateAttachments = async (FormID: string) => {
+    try {
+      let { Attachments } = this.state;
+      const formattedAttachments: IAttachment[] = FormatService.formatAttachments(Attachments);
+      const attachmentsSharePoint = await getAttachments(Number(FormID), this.props.MeetingSummariesListId, this.props.sp);
+      const attachmentsToDelete: IAttachment[] = FormatService.filterAttachments(attachmentsSharePoint, Attachments)
+      await deleteAttachments(Number(FormID), attachmentsToDelete, this.props.MeetingSummariesListId, this.props.sp);
+      await addAttachments(Number(FormID), this.props.MeetingSummariesListId, formattedAttachments, this.props.sp);
+    } catch (error) {
+      console.error('updateAttachments error: ', error)
     }
   }
 }
