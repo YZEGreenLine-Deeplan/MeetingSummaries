@@ -14,8 +14,9 @@ import { UnifiedNameAutocomplete } from '../UnifiedNameAutocomplete/UnifiedNameA
 import PopUp from '../PopUp/PopUp.cmp';
 import RichText from '../RichText/RichText.cmp';
 import EditNoteIcon from '@mui/icons-material/EditNote';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // Import Quill.js default styles
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+
 
 interface TableTableRepeatingSection {
     label: string;
@@ -65,6 +66,7 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
     const [editingRowId, setEditingRowId] = useState<string | null>(null);
     const [currentRichTextValue, setCurrentRichTextValue] = useState<string>('');
 
+
     // Synchronize internal state when the parent data changes
     useEffect(() => {
         setLocalData(data);
@@ -94,6 +96,8 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
 
     const handleSavePopup = (value: string) => {
         if (editingRowId) {
+            const rowIndex = localData.findIndex((row) => row.uid === editingRowId);
+            
             setLocalData((prev) =>
                 prev.map((row) =>
                     row.uid === editingRowId ? { ...row, description: value } : row
@@ -104,7 +108,7 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
                 { target: { value } },
                 name,
                 'description',
-                localData.findIndex((row) => row.uid === editingRowId)
+                rowIndex
             );
 
             setIsDialogOpen(false);
@@ -112,15 +116,7 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
         }
     };
 
-    const renderRichText = (htmlContent: string) => (
-        <div
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
-            style={{
-                padding: '5px',
-                minHeight: '40px',
-            }}
-        />
-    );
+
 
 
     const renderField = (field: any, value: any, rowIndex: number, dataArrayName: string) => {
@@ -255,46 +251,87 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
             );
         } else if (field.name === "description") {
             return (
-                // <div style={{ display: 'flex', width: '100%' }}>
-                //     <div style={{ flexGrow: 1, marginRight: '8px' }}>
-                //         {renderRichText(value || '')}
-                //     </div>
-                //     <div >
-
-                //         <IconButton
-                //             onClick={() => handleOpenPopup(localData[rowIndex].uid, value)}
-                //             style={{ color: 'gray' }}
-                //         >
-                //             <EditNoteIcon fontSize="small" />
-                //         </IconButton>
-                //     </div>
-                // </div>
                 <div style={{ display: 'flex', width: '100%' }}>
-                    <div style={{ flexGrow: 1, marginRight: '8px' }}>
-                        <TextField
-                            sx={noBorder}
-                            multiline
-                            fullWidth
-                            value={value || ""} // Render plain text or a placeholder
-                            onChange={(e) => handleLocalChange(e, rowIndex, "description")} // Update local state
-                            onBlur={(e) => handleBlur(e, rowIndex, "description")} // Trigger parent state update
-                            style={{
-                                padding: '5px',
-                                minHeight: '40px',
-                            }}
+                    <div style={{ flexGrow: 1, marginRight: '8px', minHeight: '40px', padding: '5px', overflow: 'auto', textAlign: currDir ? 'right' : 'left' }}
+                        onClick={() => handleOpenPopup(localData[rowIndex].uid, value)}>
+                        <div
+                            style={{ width: '100%', minHeight: '30px', fontSize: 14 }}
+                            dangerouslySetInnerHTML={{ __html: value || '' }}
                         />
                     </div>
                     <div>
                         <IconButton
-                            onClick={() => handleOpenPopup(localData[rowIndex].uid, value)} // Open popup for detailed editing
+                            onClick={() => handleOpenPopup(localData[rowIndex].uid, value)}
                             style={{ color: 'gray' }}
                         >
                             <EditNoteIcon fontSize="small" />
                         </IconButton>
                     </div>
                 </div>
-
             );
+        }
+        else if (field.name === 'lock') {
+            return (
+                <IconButton
+                    size="small"
+                    sx={{ display: 'flex', justifyContent: 'center' }}
+                    onClick={() => {
+                        const updated = [...localData];
+                        updated[rowIndex].locked = !updated[rowIndex].locked;
+                        if (updated[rowIndex].locked) {
+                            updated[rowIndex].grantUsersPermissions = [];
+                            updated[rowIndex].grantUsersPermissionsIds = [];
+                        }
+                        setLocalData(updated);
+                    }}
+                >
+                    {localData[rowIndex].locked ? <LockIcon /> : <LockOpenIcon />}
+                </IconButton>
+            );
+        } else if (field.name === 'grantUsersPermissions') {
+            const filteredUsers = users.filter((u: any) => u?.Email);
+
+            return (
+                <>
+                    {localData[rowIndex].locked ?
+                        <IconButton
+                            disabled={localData[rowIndex].locked}
+                            size="small"
+                            sx={{ display: 'flex', justifyContent: 'center' }}
+                        >
+                            <LockIcon />
+                        </IconButton>
+                        :
+                        <UnifiedNameAutocomplete
+                            sx={noBorder}
+                            context={context}
+                            params={{ id: rowIndex }}
+                            users={filteredUsers}
+                            value={Array.isArray(value) ? value : value ? [value] : []}
+                            multiple={true}
+                            freeSolo={true}
+                            onChange={(
+                                id: any,
+                                newValue: any,
+                                email: any,
+                                isFreeSolo: boolean,
+                                grantUsersPermissionsIds: string[],
+                                onBlur: string
+                            ) => {
+                                onChangeGeneric(
+                                    {
+                                        target: { value: newValue, Email: email, isFreeSolo, grantUsersPermissionsIds },
+                                    },
+                                    dataArrayName,
+                                    field.name,
+                                    rowIndex,
+                                    onBlur
+                                );
+                            }}
+                        />
+                    }
+                </>
+            )
         }
         return (
             <TextField
@@ -336,9 +373,11 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
             </PopUp> */}
 
             <PopUp open={isDialogOpen} onClose={() => setIsDialogOpen(false)} dir={!currDir ? 'ltr' : 'rtl'}>
-                <textarea
+                <RichText
                     value={currentRichTextValue}
-                    onChange={(e) => setCurrentRichTextValue(e.target.value)} // Update text value
+                    currDir={currDir}
+                    setValue={setCurrentRichTextValue}
+                    label={!currDir ? 'Description' : 'תיאור'}
                     style={{
                         width: '100%',
                         height: '150px',
@@ -347,9 +386,8 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
                         border: '1px solid #ccc',
                         borderRadius: '4px',
                         resize: 'vertical',
-                        direction: !currDir ? 'ltr' : 'rtl'
+                        direction: !currDir ? 'ltr' : 'rtl',
                     }}
-                    placeholder={!currDir ? "Enter description..." : 'הכנס תיאור'}
                 />
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <button
@@ -363,7 +401,7 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
                             border: 'none',
                             borderRadius: '4px',
                             cursor: 'pointer',
-                            direction: !currDir ? 'ltr' : 'rtl'
+                            direction: !currDir ? 'ltr' : 'rtl',
                         }}
                     >
                         {!currDir ? 'Save' : 'שמור'}

@@ -5,6 +5,9 @@ import Swal from 'sweetalert2'
 import { blue, red } from '@mui/material/colors';
 import moment, { Moment } from 'moment';
 import { SPFI } from '@pnp/sp';
+import PAService from '../services/powerAutomate.srv';
+import { WebPartContext } from '@microsoft/sp-webpart-base';
+import { IAttachment } from './Interfaces';
 
 const customClass = {
     title: styles.swal2Title,
@@ -26,7 +29,11 @@ export const defaultFactory = <T>(type: SchemaType): Partial<T> => {
             startDate: '',
             endDate: '',
             importance: '',
-            description: ''
+            description: '',
+            attachments: [],
+            locked: true,
+            grantUsersPermissions: [],
+            grantUsersPermissionsIds: []
         },
         Employee: {
             name: '',
@@ -38,7 +45,8 @@ export const defaultFactory = <T>(type: SchemaType): Partial<T> => {
             name: '',
             dueDate: '',
             status: ''
-        }
+        },
+
     };
 
     return templates[type] as Partial<T>;
@@ -200,8 +208,6 @@ export const saveEntities = async (
     ...arrays: Entity[][]
 ): Promise<void> => {
 
-    console.log("key:", key)
-
     const combinedNames = new Set<string>(
         arrays
             .reduce((acc, array) => acc.concat(array), []) // Flatten all arrays into a single array
@@ -332,3 +338,120 @@ export const sweetAlertMsgHandler = (status: string, currDir: boolean): void => 
         });
     }
 }
+
+
+
+
+
+export const handleAttachmentChange = (value: IAttachment[], setState: React.Dispatch<React.SetStateAction<any>>) => {
+    setState((prev: any) => ({
+        ...prev,
+        Attachments: value
+    }));
+}
+
+export const addAttachments = async (itemId: number, listId: string, attachments: IAttachment[], sp: SPFI): Promise<void> => {
+    const item = sp.web.lists.getById(listId).items.getById(itemId);
+    for (const attachment of attachments) {
+        try {
+            await item.attachmentFiles.add(attachment.FileName, attachment.content as Blob | ArrayBuffer | string);
+        } catch (error) {
+            throw new Error(`Failed to add item attachment ${attachment.FileName} to item ${itemId} in list ${listId}: ${String(error)}`);
+        }
+    }
+}
+
+export const getAttachments = async (itemId: number, listId: string, sp: SPFI): Promise<IAttachment[]> => {
+    try {
+        const item = sp.web.lists.getById(listId).items.getById(itemId) as any;
+        return await item.attachmentFiles();
+    } catch (error) {
+        throw new Error(`Failed to retrieve attachments for item ${itemId} in list ${listId}: ${String(error)}`);
+    }
+}
+
+export const deleteAttachments = async (itemId: number, attachments: IAttachment[], listId: string, sp: SPFI): Promise<void> => {
+    const item = sp.web.lists.getById(listId).items.getById(itemId) as any;
+    for (const attachment of attachments) {
+        let fileName = attachment.FileName
+        try {
+            await item.attachmentFiles.getByName(fileName).recycle()
+        } catch (error) {
+            throw new Error(`Failed to recycle item attachment ${fileName} to item ${itemId} in list ${listId}: ${String(error)}`);
+        }
+    }
+}
+
+export const getAuthUsers = async (context: WebPartContext): Promise<number[]> => {
+    const pa = new PAService(context, 'https://defaulta7bb05389a624bbea7a5af184af71f.39.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/169e815611ad4351961553ed3975b811/triggers/manual/paths/invoke/?api-version=1')
+    type User = {
+        Email: string;
+        Id: number;
+        LoginName: string;
+        Title: string;
+        __metadata: {}
+    }
+    try {
+        const res = await pa.post({
+            groupsId: 3
+        })
+        if (res.status === 200) {
+            return res.data.d.results.map((user: User) => user.Id)
+        }
+    } catch (error) {
+        console.error('Error in power automate flow', error)
+    }
+    return []
+}
+
+export const stripHtmlTags = (html: string): string => {
+    if (!html) return '';
+    
+    // First, replace common HTML entities
+    let text = html
+        .replace(/&nbsp;/g, ' ') // Convert &nbsp; to spaces
+        .replace(/&amp;/g, '&') // Convert &amp; to &
+        .replace(/&lt;/g, '<') // Convert &lt; to <
+        .replace(/&gt;/g, '>') // Convert &gt; to >
+        .replace(/&quot;/g, '"') // Convert &quot; to "
+        .replace(/&#39;/g, "'") // Convert &#39; to '
+        .replace(/&apos;/g, "'"); // Convert &apos; to '
+    
+    // Replace block-level elements with newlines to preserve line breaks
+    text = text
+        .replace(/<\/?(p|div|h[1-6]|ol|ul|li|br)[^>]*>/gi, '\n') // Replace block elements with newlines
+        .replace(/<\/?(strong|b|em|i|u|s|span)[^>]*>/gi, ''); // Remove inline formatting tags
+    
+    // Remove any remaining HTML tags
+    text = text.replace(/<[^>]*>/g, '');
+    
+    // Clean up whitespace and normalize line breaks
+    text = text
+        .replace(/\n\s*\n/g, '\n') // Replace multiple newlines with single newline
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .trim(); // Remove leading/trailing whitespace
+    
+    return text;
+};
+
+export const showValidationError = (currDir: boolean): void => {
+    const t = currDir ? require('../../../locales/he/common.json') : require('../../../locales/en/common.json');
+    
+    // Use appropriate direction based on language
+    const directionClass = currDir ? customClass : {
+        ...customClass,
+        htmlContainer: `${styles.swal2Content} swal2-ltr-content`
+    };
+    
+    Swal.fire({
+        title: t.validationErrorTitle,
+        text: t.validationErrorText,
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: blue.A400,
+        customClass: directionClass,
+        backdrop: false,
+        returnFocus: false
+    });
+};
+

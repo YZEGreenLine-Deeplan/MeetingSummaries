@@ -1,0 +1,145 @@
+/* Attachment.module.scss */
+.attachmentContainer {
+    /* Container styling */
+    display: flex;
+    flex-direction: column;
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem auto;
+    width: 100%;
+
+    /* Section headings */
+    h3,
+    h4 {
+        font-weight: 600;
+        color: #1f2937; // slate-800
+        margin: 0 0 0.75rem;
+    }
+
+    /* Fine-tune the smaller heading */
+    h4 {
+        font-size: 1rem;
+        margin-top: 1.25rem;
+    }
+
+    /* File-input wrapper */
+    input[type='file'] {
+        cursor: pointer;
+
+        /* Custom upload button (Chrome / Edge / Safari) */
+        &::-webkit-file-upload-button {
+            background: #4f46e5; // indigo-600
+            color: #fff;
+            border: 0;
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background 0.2s ease;
+        }
+
+        &::-webkit-file-upload-button:hover {
+            background: #4338ca; // indigo-700
+        }
+
+
+    }
+
+    .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+        cursor: not-allowed;
+    }
+
+    /* Uploaded-files list */
+    ul {
+        list-style: none;
+        margin: 0.5rem 0 0;
+        padding: 0;
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            border: 1px solid #e5e7eb; // gray-200
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            width: 95%;
+
+            strong {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                max-width: 80%;
+            }
+
+            /* "Remove" button (✕) */
+            span {
+                color: #ef4444; // red-500
+                cursor: pointer;
+                margin-left: 0.75rem;
+                font-weight: 600;
+                transition: color 0.2s ease;
+
+                &:hover {
+                    color: #dc2626; // red-600
+                }
+            }
+        }
+    }
+}
+
+.customFileUpload {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 0.375rem;
+    background-color: #4f46e5; // indigo-600
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+
+    &:hover {
+        background-color: #4338ca; // indigo-700
+    }
+}
+
+.uploadedFiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.fileNameEdit {
+    cursor: pointer;
+}
+
+.fileNameEdit:hover {
+    text-decoration: underline;
+}
+
+.fileNameNew {
+    color: lightgray;
+    font-weight: none;
+}
+
+/* Small-screen tweak: stack layout and widen list items */
+@media (max-width: 480px) {
+    .attachmentContainer {
+        padding: 0.75rem 1rem;
+    }
+
+    .attachmentContainer ul li {
+        flex-direction: column;
+        align-items: flex-start;
+
+        span {
+            margin: 0.25rem 0 0;
+        }
+    }
+}

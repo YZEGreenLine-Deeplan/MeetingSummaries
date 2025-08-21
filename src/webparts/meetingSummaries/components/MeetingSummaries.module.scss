@@ -99,6 +99,11 @@
   font-size: 16px;
 }
 
+:global(.swal2-ltr-content) {
+  direction: ltr !important;
+  text-align: left !important;
+}
+
 .swal2Confirm {
   font-family: Rubik, sans-serif;
   font-size: 14px;

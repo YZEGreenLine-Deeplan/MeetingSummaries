@@ -14,7 +14,17 @@ interface PopUpProps {
 export default function PopUp({ open, onClose, title, children, actions, dir }: PopUpProps) {
     return (
         <div className={styles.popUpContainer}>
-            <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}>
+            <Dialog 
+                open={open} 
+                onClose={onClose} 
+                maxWidth="md" 
+                fullWidth 
+                dir={dir}
+                disableRestoreFocus
+                disableAutoFocus
+                keepMounted={false}
+                scroll="paper"
+            >
                 {title && <DialogTitle>{title}</DialogTitle>}
                 <DialogContent>{children}</DialogContent>
                 {actions && <DialogActions>{actions}</DialogActions>}

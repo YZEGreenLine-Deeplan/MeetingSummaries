@@ -3,6 +3,7 @@
     "Date": "תאריך",
     "Meeting Summary": "סיכום פגישה",
     "Date of meeting": "תאריך הפגישה",
+    "Reference": "סימוכין",
     "Summarizing": "סיכם",
     "Attendees": "משתתפים",
     "ID": "מס''ד",
@@ -42,5 +43,12 @@
     "textSaveAndSend": ".פעולה זו אינה ניתנת לביטול. ברגע שתשמור ותשלח, לא תוכל לבטל את השינויים",
     "confirmButtonTextSaveAndSend": "כן, שמור ושלח",
     "required": "שדה חובה",
-    "forInfo": "לידיעה"
+    "forInfo": "לידיעה",
+    "SaveAsDraft": "שמור כטיוטה",
+    "Attachments": "מסמכים",
+    "ChooseFiles": "בחר קבצים",
+    "UploadedFiles": "קבצים שהועלו:",
+    "confidentialTask": "משימה חסויה",
+    "validationErrorTitle": "חסרים שדות חובה",
+    "validationErrorText": "יש למלא את כל השדות החובה לפני שמירת הטופס."
 }
