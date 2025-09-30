@@ -18,7 +18,7 @@ import TableRepeatingSection from './TableReaptingSection/TableRepeatingSection.
 import { IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { v4 as uuidv4 } from 'uuid';
-import { addRow, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, saveEntities, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments, getAuthUsers, stripHtmlTags, showValidationError, initReformatList, initReformatListWithDates } from './Utils';
+import { addRow, addRowAtIndex, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, saveEntities, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments, getAuthUsers, stripHtmlTags, showValidationError, initReformatList, initReformatListWithDates } from './Utils';
 import { CacheProviderWrapper } from './CacheProviderWrapper';
 import PeoplePickerMUI from './PeoplePickerMUI/PeoplePickerMUI.cmp';
 import Attachment from './Attachment/Attachment.cmp';
@@ -103,18 +103,18 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
       companies: [],
       attendees: [{ id: 1, name: '', company: '', designation: '', uid: uuidv4() }],
       absents: [{ id: 1, name: '', company: '', designation: '', uid: uuidv4() }],
-      tasks: [{ 
-        id: 1, 
-        company: '', 
-        name: '', 
-        designation: '', 
-        department: '', 
-        subject: '', 
-        startDate: '', 
-        endDate: '', 
-        importance: '', 
-        description: '', 
-        ids: [], 
+      tasks: [{
+        id: 1,
+        company: '',
+        name: '',
+        designation: '',
+        department: '',
+        subject: '',
+        startDate: '',
+        endDate: '',
+        importance: '',
+        description: '',
+        ids: [],
         uid: uuidv4(),
         locked: true,
         grantUsersPermissions: [],
@@ -375,38 +375,38 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
       ]);
 
       try {
-            const itemData: any = {
-                DateOfMeeting: moment(DateOfMeeting),
-                MeetingSummary: MeetingSummary,
-                Reference: Reference,
-                attendees: JSON.stringify(reformattedAttendees),
-                absents: JSON.stringify(reformattedAbsents),
-                meetingContent: JSON.stringify(reformattedMeetingContent),
-                tasks: JSON.stringify(reformattedTasks),
-                libraryPath: libraryPath,
-                libraryName: libraryName,
-                language: this.state.currDir ? 'he' : 'en',
-                dir: this.state.currDir,
-                selectedUsers: JSON.stringify(selectedUsers),
-                selectedUsersFreeSolo: JSON.stringify(selectedUsersFreeSolo),
-                submit: submitType,
-                Summarizing: currUser?.Title,
-                Copy: [...this.state.selectedUsers, ...this.state.selectedUsersFreeSolo].flat().join(', '),
-                // isSaveAndSend: submitType === 'send' ? 'true' : '',
-            };
-            
-            // Set MeetingSummaryVersion based on submit type
-            itemData.MeetingSummaryVersion = submitType === 'send' ? 'Final' : 'Draft';
-            
-            // Add draft fields
-            if (submitType === 'SaveAsDraft') {
-                itemData.submit = 'SaveAsDraft';
-                itemData.MeetingSummaryVersion = 'Draft';
-            }
-        
+        const itemData: any = {
+          DateOfMeeting: moment(DateOfMeeting),
+          MeetingSummary: MeetingSummary,
+          Reference: Reference,
+          attendees: JSON.stringify(reformattedAttendees),
+          absents: JSON.stringify(reformattedAbsents),
+          meetingContent: JSON.stringify(reformattedMeetingContent),
+          tasks: JSON.stringify(reformattedTasks),
+          libraryPath: libraryPath,
+          libraryName: libraryName,
+          language: this.state.currDir ? 'he' : 'en',
+          dir: this.state.currDir,
+          selectedUsers: JSON.stringify(selectedUsers),
+          selectedUsersFreeSolo: JSON.stringify(selectedUsersFreeSolo),
+          submit: submitType,
+          Summarizing: currUser?.Title,
+          Copy: [...this.state.selectedUsers, ...this.state.selectedUsersFreeSolo].flat().join(', '),
+          // isSaveAndSend: submitType === 'send' ? 'true' : '',
+        };
+
+        // Set MeetingSummaryVersion based on submit type
+        itemData.MeetingSummaryVersion = submitType === 'send' ? 'Final' : 'Draft';
+
+        // Add draft fields
+        if (submitType === 'SaveAsDraft') {
+          itemData.submit = 'SaveAsDraft';
+          itemData.MeetingSummaryVersion = 'Draft';
+        }
+
         await this.props.sp.web.lists.getById(this.props.MeetingSummariesListId).items.add(itemData).then(async (item) => {
           itemId = item.Id
-          
+
           // Update attachments after item creation
           try {
             if (this.state.FromExsitingMeetingSummaryId === '') await this.updateAttachmentsAfterCreation(item.Id);
@@ -414,7 +414,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
           } catch (error) {
             console.error('Error adding attachments', error)
           }
-          
+
           await this.props.sp.web.lists.getById(this.props.MeetingSummariesListId).items.getById(item.Id).update({
             FormLink: {
               Description: MeetingSummary,
@@ -483,7 +483,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
     this.setState({ LoadingForm: 'ok' })
   }
 
-  
+
 
 
   onChangeGeneric(e: any, dataArrayName: string, fieldName: string, rowIndex: number, onBlur?: string): void {
@@ -687,11 +687,11 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
               <div className={styles.ContainerForm}>
 
                 {LoadingForm === 'Loading' ? <Loader /> : <section>
-                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'end', paddingBottom: '1em', direction: 'ltr' }}>
-                  <Typography>עברית</Typography>
-                  <Switch onClick={() => this.setState({ currDir: !currDir })} defaultChecked inputProps={{ 'aria-label': 'ant design' }} />
-                  <Typography>English</Typography>
-                </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'end', paddingBottom: '1em', direction: 'ltr' }}>
+                    <Typography>עברית</Typography>
+                    <Switch onClick={() => this.setState({ currDir: !currDir })} defaultChecked inputProps={{ 'aria-label': 'ant design' }} />
+                    <Typography>English</Typography>
+                  </div>
 
                   <section className={styles.Section}>
                     <div className={styles.fieldStyle}>
@@ -739,6 +739,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                       name={'attendees'}
                       data={attendees}
                       addRow={() => addRow('attendees', 'Employee', this.setState.bind(this))}
+                      addRowAtIndex={(index) => addRowAtIndex('attendees', 'Employee', index, this.setState.bind(this))}
                       deleteRow={(rowIndex) => deleteRow('attendees', rowIndex, this.setState.bind(this))}
                       onChangeGeneric={this.onChangeGeneric}
                       context={this.props.context}
@@ -752,6 +753,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                       name={'absents'}
                       data={absents}
                       addRow={() => addRow('absents', 'Employee', this.setState.bind(this))}
+                      addRowAtIndex={(index) => addRowAtIndex('absents', 'Employee', index, this.setState.bind(this))}
                       deleteRow={(rowIndex) => deleteRow('absents', rowIndex, this.setState.bind(this))}
                       onChangeGeneric={this.onChangeGeneric}
                       context={this.props.context}
@@ -787,6 +789,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                       name={'meetingContent'}
                       data={meetingContent}
                       addRow={() => addRow('meetingContent', 'MeetingContent', this.setState.bind(this))}
+                      addRowAtIndex={(index) => addRowAtIndex('meetingContent', 'MeetingContent', index, this.setState.bind(this))}
                       deleteRow={(rowIndex) => deleteRow('meetingContent', rowIndex, this.setState.bind(this))}
                       attachRow={(rowIndex) => this.attachRow('meetingContent', rowIndex)}
                       onChangeGeneric={this.onChangeGeneric}
@@ -801,6 +804,7 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                       name={'tasks'}
                       data={tasks}
                       addRow={() => addRow('tasks', 'Task', this.setState.bind(this))}
+                      addRowAtIndex={(index) => addRowAtIndex('tasks', 'Task', index, this.setState.bind(this))}
                       deleteRow={(rowIndex) => deleteRow('tasks', rowIndex, this.setState.bind(this))}
                       onChangeGeneric={this.onChangeGeneric}
                       context={this.props.context}
@@ -845,18 +849,18 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                   {LoadingForm === 'Saving' ? <LinearProgress /> : null}
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '2em', gap: '20px' }}>
-                        <Button variant="contained" color='success' sx={{ backgroundColor: '#8AC693', minWidth: '10em', textTransform: 'capitalize' }} onClick={() => this.submitForm('send')}>{t.SaveAndSend}</Button>
-                        <Button variant="contained" color='primary' sx={{ minWidth: '10em', textTransform: 'capitalize' }} onClick={() => this.submitForm('save')}>{t.Save}</Button>
-                        <Button variant="contained" sx={{ whiteSpace: 'nowrap', backgroundColor: '#EBAD67', minWidth: '10em', textTransform: 'capitalize', '&:hover': { backgroundColor: '#D79954' } }} onClick={() => this.submitForm('SaveAsDraft')}>{t.SaveAsDraft}</Button>
-                        {/* Draft Manager functionality commented out
+                    <Button variant="contained" color='success' sx={{ backgroundColor: '#8AC693', minWidth: '10em', textTransform: 'capitalize' }} onClick={() => this.submitForm('send')}>{t.SaveAndSend}</Button>
+                    <Button variant="contained" color='primary' sx={{ minWidth: '10em', textTransform: 'capitalize' }} onClick={() => this.submitForm('save')}>{t.Save}</Button>
+                    <Button variant="contained" sx={{ whiteSpace: 'nowrap', backgroundColor: '#EBAD67', minWidth: '10em', textTransform: 'capitalize', '&:hover': { backgroundColor: '#D79954' } }} onClick={() => this.submitForm('SaveAsDraft')}>{t.SaveAsDraft}</Button>
+                    {/* Draft Manager functionality commented out
                         <Button variant="outlined" color='info' sx={{ minWidth: '10em', textTransform: 'capitalize' }} onClick={this.openDraftManager}>ניהול Drafts</Button>
                         */}
-                        <Button variant="contained" color='error' sx={{ backgroundColor: '#CA3935', minWidth: '10em', textTransform: 'capitalize' }} onClick={() => sweetAlertMsgHandler('Cancel', currDir)}>{t.Cancel}</Button>
-                    </div>
+                    <Button variant="contained" color='error' sx={{ backgroundColor: '#CA3935', minWidth: '10em', textTransform: 'capitalize' }} onClick={() => sweetAlertMsgHandler('Cancel', currDir)}>{t.Cancel}</Button>
+                  </div>
                 </section>}
               </div>
             </Paper>
-            
+
 
           </form>
         </CacheProviderWrapper>

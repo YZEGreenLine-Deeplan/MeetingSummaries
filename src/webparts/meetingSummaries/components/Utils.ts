@@ -71,6 +71,37 @@ export const addRow = <T>(
     }));
 };
 
+export const addRowAtIndex = <T>(
+    dataArrayName: string,
+    type: SchemaType,
+    index: number,
+    setState: (updater: (prevState: any) => any) => void
+): void => {
+    const defaultRow = defaultFactory<T>(type);
+
+    setState((prevState) => {
+        const currentArray = [...prevState[dataArrayName]];
+        const newRow = {
+            id: currentArray.length + 1, // Will be reordered later
+            ...defaultRow,
+            uid: uuidv4(), // Generate unique identifier
+        };
+
+        // Insert the new row at the specified index
+        currentArray.splice(index, 0, newRow);
+
+        // Reorder IDs to maintain sequential numbering
+        const reorderedArray = currentArray.map((item, idx) => ({
+            ...item,
+            id: idx + 1
+        }));
+
+        return {
+            [dataArrayName]: reorderedArray,
+        };
+    });
+};
+
 export const deleteRow = <T extends BaseEntity>(
     dataArrayName: string,
     rowIndex: number,
@@ -406,7 +437,7 @@ export const getAuthUsers = async (context: WebPartContext): Promise<number[]> =
 
 export const stripHtmlTags = (html: string): string => {
     if (!html) return '';
-    
+
     // First, replace common HTML entities
     let text = html
         .replace(/&nbsp;/g, ' ') // Convert &nbsp; to spaces
@@ -416,33 +447,33 @@ export const stripHtmlTags = (html: string): string => {
         .replace(/&quot;/g, '"') // Convert &quot; to "
         .replace(/&#39;/g, "'") // Convert &#39; to '
         .replace(/&apos;/g, "'"); // Convert &apos; to '
-    
+
     // Replace block-level elements with newlines to preserve line breaks
     text = text
         .replace(/<\/?(p|div|h[1-6]|ol|ul|li|br)[^>]*>/gi, '\n') // Replace block elements with newlines
         .replace(/<\/?(strong|b|em|i|u|s|span)[^>]*>/gi, ''); // Remove inline formatting tags
-    
+
     // Remove any remaining HTML tags
     text = text.replace(/<[^>]*>/g, '');
-    
+
     // Clean up whitespace and normalize line breaks
     text = text
         .replace(/\n\s*\n/g, '\n') // Replace multiple newlines with single newline
         .replace(/\s+/g, ' ') // Replace multiple spaces with single space
         .trim(); // Remove leading/trailing whitespace
-    
+
     return text;
 };
 
 export const showValidationError = (currDir: boolean): void => {
     const t = currDir ? require('../../../locales/he/common.json') : require('../../../locales/en/common.json');
-    
+
     // Use appropriate direction based on language
     const directionClass = currDir ? customClass : {
         ...customClass,
         htmlContainer: `${styles.swal2Content} swal2-ltr-content`
     };
-    
+
     Swal.fire({
         title: t.validationErrorTitle,
         text: t.validationErrorText,

@@ -39,3 +39,9 @@
     border-color: #007bff;
     background-color: #e7f0ff;
 }
+
+/* ReactQuill editor height */
+.richTextContainer :global(.ql-editor) {
+    height: 300px;
+    overflow-y: auto;
+}

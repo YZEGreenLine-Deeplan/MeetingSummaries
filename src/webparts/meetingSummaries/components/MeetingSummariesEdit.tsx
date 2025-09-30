@@ -18,7 +18,7 @@ import TableRepeatingSection from './TableReaptingSection/TableRepeatingSection.
 import { CacheProviderWrapper } from './CacheProviderWrapper';
 import CloseIcon from '@mui/icons-material/Close';
 import { v4 as uuidv4 } from 'uuid';
-import { addRow, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, initReformatListWithDates, saveEntities, initReformatList, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments, getAuthUsers, stripHtmlTags, showValidationError } from './Utils';
+import { addRow, addRowAtIndex, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, initReformatListWithDates, saveEntities, initReformatList, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments, getAuthUsers, stripHtmlTags, showValidationError } from './Utils';
 import PeoplePickerMUI from './PeoplePickerMUI/PeoplePickerMUI.cmp';
 import Attachment from './Attachment/Attachment.cmp';
 import { FormatService } from '../services/format.srv';
@@ -616,9 +616,9 @@ export default class MeetingSummariesEdit extends React.Component<IMeetingSummar
         }
         const meetingContentSchema: Schema = {
             fields: [
-                        { name: 'idView', label: t.ID, type: 'number', width: 80 },
-        { name: 'description', label: t.Description, type: 'string', editable: true },
-        { name: 'name', label: t.ActionBy, type: 'string', width: 180, editable: true },
+                { name: 'idView', label: t.ID, type: 'number', width: 80 },
+                { name: 'description', label: t.Description, type: 'string', editable: true },
+                { name: 'name', label: t.ActionBy, type: 'string', width: 180, editable: true },
                 { name: 'dueDate', label: t.DueDate, type: 'date', width: 180, editable: true },
                 { name: 'status', label: t.Status, type: 'string', width: 180, editable: true },
                 { name: 'attach', label: t.Attach, type: 'action', width: 50, editable: true },
@@ -684,6 +684,7 @@ export default class MeetingSummariesEdit extends React.Component<IMeetingSummar
                                             name={'attendees'}
                                             data={attendees}
                                             addRow={() => addRow('attendees', 'Employee', this.setState.bind(this))}
+                                            addRowAtIndex={(index) => addRowAtIndex('attendees', 'Employee', index, this.setState.bind(this))}
                                             deleteRow={(rowIndex) => deleteRow('attendees', rowIndex, this.setState.bind(this))}
                                             onChangeGeneric={this.onChangeGeneric}
                                             context={this.props.context}
@@ -697,6 +698,7 @@ export default class MeetingSummariesEdit extends React.Component<IMeetingSummar
                                             name={'absents'}
                                             data={absents}
                                             addRow={() => addRow('absents', 'Employee', this.setState.bind(this))}
+                                            addRowAtIndex={(index) => addRowAtIndex('absents', 'Employee', index, this.setState.bind(this))}
                                             deleteRow={(rowIndex) => deleteRow('absents', rowIndex, this.setState.bind(this))}
                                             onChangeGeneric={this.onChangeGeneric}
                                             context={this.props.context}
@@ -732,6 +734,7 @@ export default class MeetingSummariesEdit extends React.Component<IMeetingSummar
                                             name={'meetingContent'}
                                             data={meetingContent}
                                             addRow={() => addRow('meetingContent', 'MeetingContent', this.setState.bind(this))}
+                                            addRowAtIndex={(index) => addRowAtIndex('meetingContent', 'MeetingContent', index, this.setState.bind(this))}
                                             deleteRow={(rowIndex) => deleteRow('meetingContent', rowIndex, this.setState.bind(this))}
                                             attachRow={(rowIndex) => this.attachRow('meetingContent', rowIndex)}
                                             onChangeGeneric={this.onChangeGeneric}
@@ -746,6 +749,7 @@ export default class MeetingSummariesEdit extends React.Component<IMeetingSummar
                                             name={'tasks'}
                                             data={tasks}
                                             addRow={() => addRow('tasks', 'Task', this.setState.bind(this))}
+                                            addRowAtIndex={(index) => addRowAtIndex('tasks', 'Task', index, this.setState.bind(this))}
                                             deleteRow={(rowIndex) => deleteRow('tasks', rowIndex, this.setState.bind(this))}
                                             onChangeGeneric={this.onChangeGeneric}
                                             context={this.props.context}

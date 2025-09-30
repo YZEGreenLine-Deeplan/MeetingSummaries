@@ -129,7 +129,7 @@ export default function RichText({ value, disabled, setValue, style, label, erro
 
             // Set direction based on currDir
             editorElement.setAttribute('dir', currDir ? 'rtl' : 'ltr');
-            
+
             // Set default alignment for the toolbar based on direction
             setTimeout(() => {
                 const defaultAlignment = currDir ? 'right' : 'left';
@@ -193,7 +193,7 @@ export default function RichText({ value, disabled, setValue, style, label, erro
 
     return (
         <div className={styles.richTextContainer} style={{ ...style, border: error ? "1px solid #d32f2f" : undefined }}>
-                {/* Editor */}
+            {/* Editor */}
             <Typography
                 sx={{
                     marginBottom: "8px",
@@ -204,16 +204,16 @@ export default function RichText({ value, disabled, setValue, style, label, erro
             >
                 {label}
             </Typography>
-                    <ReactQuill
+            <ReactQuill
                 ref={quillRef}
                 value={inputValue || ""}
                 readOnly={disabled}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 theme="snow"
-                style={{ textAlign: "center", height: "auto", maxHeight: "100px" }} // Quill's default theme
-                        modules={{
-                            toolbar: [
+                style={{ textAlign: "center", height: "auto", maxHeight: "300px" }}
+                modules={{
+                    toolbar: [
                         ["bold", "italic", "underline", "strike"], // toggled buttons                        
                         [{ header: 1 }, { header: 2 }], // custom button values                        
                         [{ indent: "-1" }, { indent: "+1" }], // outdent/indent                        
@@ -234,6 +234,6 @@ export default function RichText({ value, disabled, setValue, style, label, erro
                     {errorText}
                 </Typography>
             )}
-            </div>
+        </div>
     );
 }

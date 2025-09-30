@@ -24,6 +24,7 @@ interface TableTableRepeatingSection {
     schema: Schema;
     data: Record<string, any>[]; // Ensure each row has a unique `uid`
     addRow?: () => void;
+    addRowAtIndex?: (index: number) => void;
     attachRow?: (rowIndex: number) => void;
     deleteRow?: (rowIndex: number) => void
     onChangeGeneric: any
@@ -52,6 +53,7 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
     name,
     data,
     addRow,
+    addRowAtIndex,
     attachRow,
     deleteRow,
     onChangeGeneric,
@@ -97,7 +99,7 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
     const handleSavePopup = (value: string) => {
         if (editingRowId) {
             const rowIndex = localData.findIndex((row) => row.uid === editingRowId);
-            
+
             setLocalData((prev) =>
                 prev.map((row) =>
                     row.uid === editingRowId ? { ...row, description: value } : row
@@ -379,11 +381,10 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
                     setValue={setCurrentRichTextValue}
                     label={!currDir ? 'Description' : 'תיאור'}
                     style={{
-                        width: '100%',
-                        height: '150px',
+                        width: '96%',
+                        height: '380px',
                         padding: '10px',
                         fontSize: '14px',
-                        border: '1px solid #ccc',
                         borderRadius: '4px',
                         resize: 'vertical',
                         direction: !currDir ? 'ltr' : 'rtl',
@@ -426,6 +427,10 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
                                 {field.label}
                             </div>
                         ))}
+                        {/* Add Row Header */}
+                        <div className={styles.headerCell} style={{ maxWidth: 50, minWidth: 50 }}>
+                            {!currDir ? 'Add' : 'הוסף'}
+                        </div>
                     </div>
                     {/* Table Rows */}
                     {localData.map((rowData, rowIndex) => (
@@ -444,16 +449,27 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
                                         : rowData[field.name] || '-'} {/* Default rendering */}
                                 </div>
                             ))}
+                            {/* Add Row Button for each row */}
+                            <div className={styles.cell} style={{ maxWidth: 50, minWidth: 50 }}>
+                                <IconButton
+                                    size="small"
+                                    sx={{ display: "flex", justifyContent: "center" }}
+                                    onClick={() => addRowAtIndex?.(rowIndex + 1)}
+                                    title={!currDir ? 'Add After' : 'הוסף שורה אחרי'}
+                                >
+                                    <AddIcon fontSize="small" />
+                                </IconButton>
+                            </div>
                         </div>
                     ))}
                 </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '1em' }}>
+            {/* <div style={{ display: 'flex', justifyContent: 'center', padding: '1em' }}>
                 <Fab size="small" aria-label="add" color='success' sx={{ backgroundColor: '#8AC693' }} onClick={addRow}>
                     <AddIcon htmlColor="white" />
                 </Fab>
-            </div>
+            </div> */}
         </div >
     );
 })
