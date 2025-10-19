@@ -486,3 +486,17 @@ export const showValidationError = (currDir: boolean): void => {
     });
 };
 
+/**
+ * Generates a default meeting summary title in the format: YYYYMMDD-YZE-NTA-TMT-MOM-Subject
+ * @param date - The meeting date (optional, defaults to current date)
+ * @returns Formatted meeting summary title
+ */
+export const generateDefaultMeetingSummaryTitle = (date?: Date): string => {
+    const meetingDate = date || new Date();
+    const year = meetingDate.getFullYear();
+    const month = String(meetingDate.getMonth() + 1).padStart(2, '0');
+    const day = String(meetingDate.getDate()).padStart(2, '0');
+
+    return `${day}${month}${year}-YZE-NTA-TMT-MOM-Subject`;
+};
+

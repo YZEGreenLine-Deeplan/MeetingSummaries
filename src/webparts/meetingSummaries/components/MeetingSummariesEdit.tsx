@@ -18,7 +18,7 @@ import TableRepeatingSection from './TableReaptingSection/TableRepeatingSection.
 import { CacheProviderWrapper } from './CacheProviderWrapper';
 import CloseIcon from '@mui/icons-material/Close';
 import { v4 as uuidv4 } from 'uuid';
-import { addRow, addRowAtIndex, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, initReformatListWithDates, saveEntities, initReformatList, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments, getAuthUsers, stripHtmlTags, showValidationError } from './Utils';
+import { addRow, addRowAtIndex, deleteRow, sweetAlertMsgHandler, reformatList, reformatListWithDates, initReformatListWithDates, saveEntities, initReformatList, confirmSaveAndSend, getAttachments, deleteAttachments, addAttachments, getAuthUsers, stripHtmlTags, showValidationError, generateDefaultMeetingSummaryTitle } from './Utils';
 import PeoplePickerMUI from './PeoplePickerMUI/PeoplePickerMUI.cmp';
 import Attachment from './Attachment/Attachment.cmp';
 import { FormatService } from '../services/format.srv';
@@ -201,7 +201,10 @@ export default class MeetingSummariesEdit extends React.Component<IMeetingSummar
     };
 
     handleDateChange = (value: any): void => {
-        this.setState({ DateOfMeeting: value }, () => {
+        this.setState({
+            DateOfMeeting: value,
+            MeetingSummary: generateDefaultMeetingSummaryTitle(value.toDate())
+        }, () => {
             this.handleErrorRequire(value, 'DateOfMeeting')
         });
     }
@@ -414,10 +417,8 @@ export default class MeetingSummariesEdit extends React.Component<IMeetingSummar
                                     Importance: task.importance,
                                     UUID: task.uid,
                                     Company: task.company,
-                                    ForInfoId: task.forInfoIds,
-                                    Locked: task.locked || false,
-                                    GrantUsersPermissions: task.grantUsersPermissions || [],
-                                    GrantUsersPermissionsIds: task.grantUsersPermissionsIds || [],
+                                    ForInfoId: task.forInfoIds || [],
+                                    grantUsersPermissionsId: task.grantUsersPermissionsIds,
                                     LinkToMeetingSummary: {
                                         Description: MeetingSummary,
                                         Url: `${this.props.context.pageContext.web.absoluteUrl}/SitePages/MeetingSummaries.aspx?FormID=${this.props.FormID}`
