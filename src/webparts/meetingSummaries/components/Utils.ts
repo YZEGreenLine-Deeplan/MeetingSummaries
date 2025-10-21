@@ -497,6 +497,6 @@ export const generateDefaultMeetingSummaryTitle = (date?: Date): string => {
     const month = String(meetingDate.getMonth() + 1).padStart(2, '0');
     const day = String(meetingDate.getDate()).padStart(2, '0');
 
-    return `${day}${month}${year}-YZE-NTA-TMT-MOM-Subject`;
+    return `${year}${month}${day}-YZE-NTA-TMT-MOM-Subject`;
 };
 
