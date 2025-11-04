@@ -465,11 +465,18 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
                 </div>
             </div>
 
-            {/* <div style={{ display: 'flex', justifyContent: 'center', padding: '1em' }}>
-                <Fab size="small" aria-label="add" color='success' sx={{ backgroundColor: '#8AC693' }} onClick={addRow}>
+            {/* +Add Row Button */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '1em' }}>
+                <Fab
+                    size="small"
+                    aria-label="add"
+                    color="success"
+                    sx={{ backgroundColor: '#8AC693' }}
+                    onClick={addRow}
+                >
                     <AddIcon htmlColor="white" />
                 </Fab>
-            </div> */}
+            </div>
         </div >
     );
 })

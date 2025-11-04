@@ -11,7 +11,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { FolderPicker, IFolder } from "@pnp/spfx-controls-react/lib/FolderPicker";
 import moment, { Moment } from 'moment';
-import { Schema, StyledDatePicker, Task, Employee, MeetingContent, IAttachment } from './Interfaces'
+import { Schema, StyledDatePicker, Task, Employee, MeetingContent, IAttachment, SchemaField } from './Interfaces'
 import { Icon } from '@fluentui/react/lib/Icon';
 import ClearIcon from '@mui/icons-material/Clear';
 import TableRepeatingSection from './TableReaptingSection/TableRepeatingSection.cmp';
@@ -601,19 +601,19 @@ export default class MeetingSummariesEdit extends React.Component<IMeetingSummar
             fields: [
                 // { name: 'id', label: t.ID, type: 'number', width: 80 },
                 unlockAccess ? { name: 'lock', label: t.confidentialTask, type: 'action', editable: true } as any : null,
-                { name: 'company', label: t.Company, type: 'string', editable: true },
                 { name: 'name', label: t.Name, type: 'string', editable: true },
-                { name: 'designation', label: t.Designation, type: 'string', editable: true },
-                { name: 'department', label: t.Department, type: 'string', editable: true },
+                { name: 'company', label: t.Company, type: 'string', editable: true },
+                { name: 'description', label: t.Description, type: 'string', editable: true },
+                // { name: 'designation', label: t.Designation, type: 'string', editable: true },
+                // { name: 'department', label: t.Department, type: 'string', editable: true },
                 { name: 'subject', label: t.Subject, type: 'string', editable: true },
                 { name: 'startDate', label: t['Start Date'], type: 'date', editable: true },
                 { name: 'endDate', label: t['End Date'], type: 'date', editable: true },
                 { name: 'importance', label: t.Importance, type: 'string', editable: true },
-                { name: 'description', label: t.Description, type: 'string', editable: true },
                 { name: 'forInfo', label: t.forInfo, type: 'string', editable: true },
                 unlockAccess ? { name: 'grantUsersPermissions', label: 'Authorized', type: 'action', editable: true } as any : null,
                 { name: 'action', label: t.Delete, type: 'action', width: 50, editable: true }
-            ].filter(Boolean) as any,
+            ].filter(Boolean) as SchemaField[],
         }
         const meetingContentSchema: Schema = {
             fields: [

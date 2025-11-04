@@ -6,6 +6,12 @@
 .tableWrapper {
     overflow-x: auto; // Horizontal scroll if content overflows
     max-width: 100%; // Ensures table fits within the container
+    overflow-y: auto;
+    max-height: 40em;
+
+    @media only screen and (max-width: 1280px) {
+        max-height: 30em;
+    }
 }
 
 .table {
@@ -37,6 +43,9 @@
     background-color: #4a81e9;
     color: white;
     font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
