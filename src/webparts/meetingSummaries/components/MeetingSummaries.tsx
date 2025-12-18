@@ -494,9 +494,9 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
 
     if (e?.target?.Email?.length > 0 && e?.target?.Email[0] !== undefined) {
       let selectedEmails = e?.target?.Email
-      selectedEmails = selectedEmails?.filter((email: string) => email !== '' && email !== undefined);
-      const filterdEmailsLsz = selectedEmails?.filter((email: string) => email.includes("lsz"));
-      const filterdEmailsDmy = selectedEmails?.filter((email: string) => email.includes("dmy"));
+      selectedEmails = selectedEmails?.filter((email: string) => email !== '' && email !== undefined && email !== null && typeof email === 'string');
+      const filterdEmailsLsz = selectedEmails?.filter((email: string) => email && email.includes("lsz"));
+      const filterdEmailsDmy = selectedEmails?.filter((email: string) => email && email.includes("dmy"));
       company = filterdEmailsLsz?.length === selectedEmails?.length ? "lsz" : filterdEmailsDmy?.length === selectedEmails?.length ? "dmy" : "other";
     }
 
@@ -532,8 +532,8 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
 
       // Combine all "name" fields from attendees, absents, and tasks
       const combinedSelectedUsers = new Set([
-        ...prevState.attendees.map((item: any) => item.name).filter((name: string) => name).flat(),
-        ...prevState.absents.map((item: any) => item.name).filter((name: string) => name).flat(),
+        ...prevState.attendees.map((item: any) => Array.isArray(item.name) ? item.name : [item.name]).flat().filter((name: string) => name),
+        ...prevState.absents.map((item: any) => Array.isArray(item.name) ? item.name : [item.name]).flat().filter((name: string) => name),
       ]);
 
       if (onBlur === 'onBlur' && fieldName === "name") {
@@ -815,8 +815,6 @@ export default class MeetingSummaries extends React.Component<IMeetingSummariesP
                     />
 
                   </ThemeProvider>
-
-                  <Attachment currDir={currDir} sp={this.props.sp} formType='new' value={this.state.attachments} onChange={(value) => this.setState({ attachments: value })}></Attachment>
 
                   <Divider style={{ paddingTop: '1em' }} />
 

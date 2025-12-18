@@ -205,7 +205,6 @@ const TableRepeatingSection = memo(function TableRepeatingSection({
                     multiple={true}
                     freeSolo={true}
                     onChange={(id: any, newValue: any, email: any, isFreeSolo: boolean, ids: string[], onBlur: string) => {
-
                         onChangeGeneric(
                             { target: { value: newValue, Email: email, isFreeSolo, ids } },
                             dataArrayName,

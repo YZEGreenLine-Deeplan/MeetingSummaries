@@ -92,10 +92,10 @@ export const UnifiedNameAutocomplete: React.FC<UnifiedNameAutocompleteProps> = (
 
                 const updatedValue = Array.from(new Set([...(internalValue as string[]), ...newValue.map((item) => (typeof item === "string" ? item : item.Title))]));
 
-                const selectedIds = newValue.map((item) => (typeof item === "string" ? "" : item.Id.toString()));
+                const selectedIds = newValue.map((item) => (typeof item === "string" ? "" : item.Id?.toString() || ""));
                 setInternalValue(updatedValue); // Update state with selected Titles
 
-                const selectedEmails = newValue.map((item) => (typeof item === "string" ? "" : item.Email));
+                const selectedEmails = newValue.map((item) => (typeof item === "string" ? "" : (item.Email || "")));
 
                 onChange(params?.id ?? updatedValue, updatedValue, selectedEmails, true, selectedIds); // Pass to parent component                
 
